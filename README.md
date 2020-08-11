@@ -11,6 +11,7 @@ NodeJS API - Waldemar Neto Dev Lab - https://www.youtube.com/playlist?list=PLz_Y
 - Axios
 - Eslint
 - Prettier
+- node-config
 
 
 ## StormGlass API
