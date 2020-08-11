@@ -1,4 +1,5 @@
 import { StormGlass, ForecastPoint } from '@src/clients/stormGlass';
+import { InternalError } from '@src/util/errors/internal-error';
 
 export enum BeachPosition {
   S = 'S',
@@ -22,6 +23,12 @@ export interface TimeForecast {
 
 export interface BeachForecast extends Omit<Beach, 'user'>, ForecastPoint {}
 
+export class ForecastProcessingInternalError extends InternalError {
+  constructor(message: string) {
+    super(`Unexpected error during the forecast processing: ${message}`);
+  }
+}
+
 export class Forecast {
   constructor(protected stormGlass = new StormGlass()) {}
 
@@ -29,20 +36,16 @@ export class Forecast {
     beaches: Beach[]
   ): Promise<TimeForecast[]> {
     const pointsWithCorrectsSources: BeachForecast[] = [];
-    for (const beach of beaches) {
-      const points = await this.stormGlass.fetchPoints(beach.lat, beach.lng);
-      const enrichedBeachData: BeachForecast[] = points.map((point) => ({
-        ...{
-          lat: beach.lat,
-          lng: beach.lng,
-          name: beach.name,
-          position: beach.position,
-          rating: 1,
-        },
-        ...point,
-      }));
+    try {
+      for (const beach of beaches) {
+        const points = await this.stormGlass.fetchPoints(beach.lat, beach.lng);
 
-      pointsWithCorrectsSources.push(...enrichedBeachData);
+        const enrichedBeachData = this.enrichedBeachData(points, beach);
+
+        pointsWithCorrectsSources.push(...enrichedBeachData);
+      }
+    } catch (error) {
+      throw new ForecastProcessingInternalError(error.message);
     }
     return this.mapForecastByTime(pointsWithCorrectsSources);
   }
@@ -62,5 +65,21 @@ export class Forecast {
     }
 
     return forecastByTime;
+  }
+
+  private enrichedBeachData(
+    points: ForecastPoint[],
+    beach: Beach
+  ): BeachForecast[] {
+    return points.map((point) => ({
+      ...{
+        lat: beach.lat,
+        lng: beach.lng,
+        name: beach.name,
+        position: beach.position,
+        rating: 1,
+      },
+      ...point,
+    }));
   }
 }
