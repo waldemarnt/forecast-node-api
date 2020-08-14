@@ -4,6 +4,7 @@
   "description": "Typescript Forecast NodeJS API",
   "main": "index.js",
   "scripts": {
+    "test": "yarn test:unit && yarn test:functional",
     "test:functional": "jest --projects ./test --runInBand",
     "test:unit": "jest",
     "start:dev": "ts-node-dev src/index.ts",

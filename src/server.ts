@@ -17,6 +17,12 @@ export class SetupServer extends Server {
     await this.setupDatabase();
   }
 
+  public start(): void {
+    this.app.listen(this.port, () => {
+      console.info('Server listening on port', this.port);
+    });
+  }
+
   private setupExpress(): void {
     this.app.use(bodyParser.json());
   }
