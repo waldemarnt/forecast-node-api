@@ -1,5 +1,6 @@
 import user from '@src/models/user';
 import AuthService from '@src/services/auth';
+import { UserController } from '@src/controllers/users';
 
 describe('User functional tests', () => {
   beforeEach(async () => await user.deleteMany({}));
@@ -48,6 +49,53 @@ describe('User functional tests', () => {
       expect(response.body).toEqual({
         code: 409,
         error: 'User validation failed: email: already exists in the database',
+      });
+    });
+  });
+  describe('When authenticate an user', () => {
+    it('should generate a token for valid user', async () => {
+      const newUser = {
+        name: 'John Doe',
+        email: 'john@mail.com',
+        password: '1234',
+      };
+
+      await new user(newUser).save();
+      const response = await global.testRequest
+        .post('/users/authenticate')
+        .send({ email: newUser.email, password: newUser.password });
+
+      expect(response.body).toEqual(
+        expect.objectContaining({ token: expect.any(String) })
+      );
+    });
+    it('should return UNAUTHORIZED status if user the given email not found', async () => {
+      const response = await global.testRequest
+        .post('/users/authenticate')
+        .send({ email: 'not-found@email.com.br', password: '1234' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        code: 401,
+        error: 'User not found',
+      });
+    });
+    it('should return UNAUTHORIZED status if password does not match', async () => {
+      const newUser = {
+        name: 'John Doe',
+        email: 'john@mail.com',
+        password: '1234',
+      };
+
+      await new user(newUser).save();
+      const response = await global.testRequest
+        .post('/users/authenticate')
+        .send({ email: newUser.email, password: 'no-correct-password' });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        code: 401,
+        error: 'Invalid credentials',
       });
     });
   });

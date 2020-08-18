@@ -1,5 +1,5 @@
 import config, { IConfig } from 'config';
-import mongoose, { Mongoose } from 'mongoose';
+import mongoose from 'mongoose';
 
 const dbConfig: IConfig = config.get('App.database');
 
