@@ -1,6 +1,5 @@
 import user from '@src/models/user';
 import AuthService from '@src/services/auth';
-import { UserController } from '@src/controllers/users';
 
 describe('User functional tests', () => {
   beforeEach(async () => await user.deleteMany({}));

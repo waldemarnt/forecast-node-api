@@ -3,15 +3,27 @@ import nock from 'nock';
 import apiForecastResponseOneBeach from '@test/fixtures/apiForecastResponseOneBeach.json';
 import stormGlassFixture from '@test/fixtures/stormGlassFixture.json';
 import Beach from '@src/models/beach';
+import User from '@src/models/user';
+import AuthService from '@src/services/auth';
 
+let token: string;
 describe('Beach forecast functional tests', () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     await Beach.deleteMany({});
+    await User.deleteMany({});
+    const defaultUser = {
+      name: 'John Doe',
+      email: 'john@mail.com.br',
+      password: '1234',
+    };
+    const user = await new User(defaultUser).save();
+    token = AuthService.generateToken(user.toJSON());
     const defaultBeach = {
       lat: -33.79,
       lng: 151.289824,
       name: 'Manly',
       position: 'E',
+      user: user.id,
     };
     const beach = new Beach(defaultBeach);
     await beach.save();
@@ -27,7 +39,9 @@ describe('Beach forecast functional tests', () => {
         source: 'noaa',
       })
       .reply(200, stormGlassFixture);
-    const { body, status } = await global.testRequest.get('/forecast');
+    const { body, status } = await global.testRequest.get('/forecast').set({
+      'x-access-token': token,
+    });
     expect(status).toBe(200);
     expect(body).toEqual(apiForecastResponseOneBeach);
   });
@@ -43,7 +57,9 @@ describe('Beach forecast functional tests', () => {
       })
       .replyWithError('Something went wrong');
 
-    const { status } = await global.testRequest.get('/forecast');
+    const { status } = await global.testRequest.get('/forecast').set({
+      'x-access-token': token,
+    });
 
     expect(status).toBe(500);
   });
